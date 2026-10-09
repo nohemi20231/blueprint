@@ -1,0 +1,18 @@
+{
+  "name": "blueprint",
+  "owner": { "name": "Nohemi Gonzalez Lopez" },
+  "metadata": {
+    "description": "Blueprint: design the architecture before writing code.",
+    "version": "2.4.0"
+  },
+  "plugins": [
+    {
+      "name": "blueprint",
+      "source": "./copilot",
+      "description": "The /blueprint orchestrator, 13 design agents with cross-model review, and a no-code gate until you approve the architecture.",
+      "version": "2.4.0",
+      "license": "Apache-2.0",
+      "homepage": "https://github.com/nohemi20231/blueprint/tree/main/copilot"
+    }
+  ]
+}

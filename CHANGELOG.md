@@ -2,6 +2,14 @@
 
 Each version came from a lesson in a real design session.
 
+## 2.4 - GitHub Copilot version
+- New `copilot/` plugin for the GitHub Copilot app and CLI: the `/blueprint` orchestrator, the rulebook, 13 agents and the no-code gate. The repo is also a plugin marketplace (`.github/plugin/marketplace.json`).
+- Cross-model review: the gatekeeper and refactor reviewer run on GPT, and the three decomposers run on Claude, GPT and Gemini.
+- The orchestrator copies the rulebook and templates into `docs/architecture/kit/`, because Copilot agents cannot preload skills.
+- Agents start fresh on every call and work from their files, because Copilot agents cannot be resumed.
+- The gate script is written for the hook input of Copilot (app, CLI, cloud agent), VS Code and Claude Code, with tests on sample payloads. Writing `APPROVAL.md` asks the user to confirm, so no agent can approve its own design; symlinks and edits to the project lock are blocked.
+- *Why:* the team uses Copilot, and a reviewer from a different model family catches what same-family reviewers miss.
+
 ## 2.3 - No code before approval
 - Rules G1-G4: no code, build files or scaffolding before the user approves the architecture; agents write only to `docs/architecture/`.
 - Architecture approval gate after the main services are created (gatekeeper Job 3). Cost, compliance and operator reviews run before it.

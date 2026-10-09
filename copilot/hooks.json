@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": "g=\"\"; for r in \"${PLUGIN_ROOT:-}\" \"${COPILOT_PLUGIN_ROOT:-}\" \"${CLAUDE_PLUGIN_ROOT:-}\"; do if [ -n \"$r\" ] && [ -f \"$r/skills/blueprint/hook/blueprint-gate.sh\" ]; then g=\"$r/skills/blueprint/hook/blueprint-gate.sh\"; break; fi; done; h=\"${COPILOT_HOME:-$HOME/.copilot}\"; [ -n \"$g\" ] || g=\"$(ls \"$h\"/installed-plugins/blueprint/blueprint/skills/blueprint/hook/blueprint-gate.sh \"$h\"/installed-plugins/_direct/*/skills/blueprint/hook/blueprint-gate.sh 2>/dev/null | head -n 1)\"; if [ -n \"$g\" ]; then exec bash \"$g\"; fi; cat >/dev/null; echo \"Blueprint gate: hook script not found, so the no-code lock is off for this call. Rule G1 still applies.\" >&2; exit 0",
+        "timeoutSec": 15
+      }
+    ]
+  }
+}

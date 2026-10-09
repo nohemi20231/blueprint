@@ -1,0 +1,13 @@
+{
+  "name": "blueprint",
+  "version": "2.4.0",
+  "description": "Design the architecture before writing code: an orchestrator and 13 agents that design a microservice system with you, with cross-model review and a no-code gate until you approve.",
+  "author": { "name": "Nohemi Gonzalez Lopez", "url": "https://github.com/nohemi20231" },
+  "homepage": "https://github.com/nohemi20231/blueprint/tree/main/copilot",
+  "repository": "https://github.com/nohemi20231/blueprint",
+  "license": "Apache-2.0",
+  "keywords": ["architecture", "microservices", "design", "adr", "tdd"],
+  "agents": "agents/",
+  "skills": "skills/",
+  "hooks": "hooks.json"
+}

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": "bash .github/hooks/blueprint-gate.sh",
+        "command": "bash .github/hooks/blueprint-gate.sh",
+        "cwd": ".",
+        "timeoutSec": 15
+      }
+    ]
+  }
+}

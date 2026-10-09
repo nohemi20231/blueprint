@@ -20,6 +20,8 @@ flowchart LR
 
 ## Quick start
 
+> **Using GitHub Copilot?** See [`copilot/`](copilot/README.md): the same process as a Copilot plugin, with cross-model review (`copilot plugin marketplace add nohemi20231/blueprint`, then `copilot plugin install blueprint@blueprint`).
+
 ```bash
 git clone https://github.com/nohemi20231/blueprint.git ~/workspace/agents/blueprint
 cd ~/workspace/agents/blueprint && ./install.sh
@@ -113,6 +115,7 @@ docs/architecture/
 | `skills/blueprint/` | The orchestrator and its templates |
 | `skills/design-rulebook/` | The shared rules |
 | `hooks/` | The no-code lock and an example project setting |
+| `copilot/` | The GitHub Copilot version: plugin, 13 agents, skills, gate hook and its tests |
 | `install.sh` | Copies everything into `~/.claude` |
 | `CHANGELOG.md` | Versions, the reasons behind each change, known risks |
 | `LICENSE`, `NOTICE` | Apache License 2.0 and the attribution to keep when redistributing |
