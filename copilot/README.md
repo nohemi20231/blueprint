@@ -6,7 +6,7 @@
 flowchart TB
   O["/blueprint orchestrator<br/>main session, asks you"] --> C["Claude agents<br/>framer, architect, services, reviews"]
   O --> J["GPT judges<br/>gatekeeper, refactor reviewer"]
-  O --> D["3 decomposers<br/>Claude, GPT, Gemini"]
+  O --> D["2-3 decomposers<br/>Claude, Gemini, GPT"]
   C --> F["docs/architecture/<br/>kit/RULEBOOK, STATE, ADRs, APPROVAL"]
   J --> F
   D --> F
