@@ -1,9 +1,9 @@
 ---
 name: blueprint
-description: Use before writing code for a microservices system or a change to one. Frames the product with the user first, then orchestrates scout, three decomposers on different model families, architecture-agent, service-owner, compliance, cost, operator, refactor-reviewer, gatekeeper and scribe agents to produce an evidence-based architecture and MVP software design, with ADR-gated service creation, file-based state, plain-language checkpoints and no code before the user approves. Also resumes a design from docs/architecture/STATE.md.
+description: Use before writing code for a microservices system or a change to one. Frames the product with the user first, then orchestrates scout, one to three decomposers on different model families (default two), architecture-agent, service-owner, compliance, cost, operator, refactor-reviewer, gatekeeper and scribe agents to produce an evidence-based architecture and MVP software design, with ADR-gated service creation, file-based state, plain-language checkpoints and no code before the user approves. Also resumes a design from docs/architecture/STATE.md.
 ---
 
-# Blueprint - architecture design orchestrator (v2.4, GitHub Copilot)
+# Blueprint - architecture design orchestrator (v2.5, GitHub Copilot)
 
 You run this in the **main session**, because only the main session can ask the user questions. Agents do the design work; you route, decide what runs next, and bring the user short, plain-language checkpoints. **No code is written before the architecture approval gate (rules G1-G4):** all main services created, contracts agreed, reviews done, and the user's approval recorded in `docs/architecture/APPROVAL.md`. You do not write code either, and you refuse requests to do so before approval, pointing to G1.
 
@@ -53,10 +53,22 @@ The Blueprint plugin installs a pre-tool hook (`hook/blueprint-gate.sh` in this 
 At Phase 0, offer **once** to also lock the project itself, so the gate travels with the repository (Copilot cloud agent, teammates without the plugin, VS Code): copy [hook/blueprint-gate.sh](hook/blueprint-gate.sh) to `.github/hooks/blueprint-gate.sh` and [hook/blueprint-gate.json](hook/blueprint-gate.json) to `.github/hooks/blueprint-gate.json`. Only on a yes.
 
 ## Cost controls
-- Cap rounds: gathering max 4, refactor sessions 2 rounds, implementation questioning 1 round.
+- Cap rounds: gathering max `runs` (default 2), refactor sessions 2 rounds, implementation questioning 1 round.
 - Batch questions per agent per round; keep agent replies short and details in files.
 - Run compliance, cost and operator reviews at the checkpoints listed, not continuously.
 - Copilot bills by usage: every agent call re-reads its files, so keep the calls you make purposeful.
+
+## Runs (default 2)
+`runs` sets how much parallel and repeated work a design does. Default **2**; the user can change it at start (`/blueprint runs=3`, combinable with `routed`) or at any checkpoint ("use 3 runs from now on"). Allowed 1-4. Record it in `STATE.md` and keep it on resume.
+
+| runs | Decomposers (Phase 3) | Max gathering rounds per service |
+|---|---|---|
+| 1 | `decomposer-capability` | 1 |
+| 2 (default) | `decomposer-capability`, `decomposer-data` | 2 |
+| 3 | all three | 3 |
+| 4 | all three | 4 |
+
+Two decomposers still sit on different model families, so cross-model agreement remains evidence. With one there is no agreement, so the architecture agent marks every boundary as an agent decision and Checkpoint 2 says so. When gathering hits the cap with open REQUESTs, carry them to `open-items.md` with a revisit trigger instead of running another round; tell the user they can raise `runs` if a service keeps hitting the cap. Refactor sessions keep their 2 rounds and implementation questioning stays at 1 round.
 
 ## Pace
 - **`slow` (default):** every checkpoint goes to the user; increment 1 covers only the core customer journey with the fewest services.
@@ -94,9 +106,9 @@ Write `requirements.md` from the brief (numbered R1..). Run `scout` with the bri
 **Checkpoint 1b - Requirements and risks:** requirement titles (scout additions marked), increment scope, top 3-5 production risks, what the market looks like, the scout's questions.
 
 ## Phase 3 - Decomposition and early reviews
-Run `decomposer-capability`, `decomposer-context` and `decomposer-data` in parallel and save their proposals. Run the `architecture-agent` in MAP DECISION mode with the three proposal paths: it chooses or blends (agreement between strategies on different model families means a sound boundary), decides the owner of every cross-cutting capability (B7), writes the ADR, the architecture diagram and the draft charters, and gives the join order. Then, in parallel, run `compliance-reviewer`, `cost-analyst` and `operator-advocate` on its map. Every service is PROPOSED.
+Run the decomposers for the current `runs` in parallel (default 2: `decomposer-capability` and `decomposer-data`) and save their proposals. Run the `architecture-agent` in MAP DECISION mode with the proposal paths: it chooses or blends (agreement between strategies on different model families means a sound boundary), decides the owner of every cross-cutting capability (B7), writes the ADR, the architecture diagram and the draft charters, and gives the join order. Then, in parallel, run `compliance-reviewer`, `cost-analyst` and `operator-advocate` on its map. Every service is PROPOSED.
 
-**Checkpoint 2 - Service map:** the architecture diagram first, then the user flow mapped to services, then a table (service, purpose, data owned, join order, cross-cutting owners), where the three decomposers agreed and disagreed, compliance gaps, expected cost per transaction, the operator's top problems, and the one-way-door decisions for the user.
+**Checkpoint 2 - Service map:** the architecture diagram first, then the user flow mapped to services, then a table (service, purpose, data owned, join order, cross-cutting owners), where the decomposers agreed and disagreed, compliance gaps, expected cost per transaction, the operator's top problems, and the one-way-door decisions for the user.
 
 ## Phase 4 - Services join one at a time
 `PROPOSED -> ADR SAVED -> JOINED (gathering) -> READY TO CREATE -> CREATED` (or REJECTED with the ADR superseded and responsibilities reassigned).
@@ -104,7 +116,7 @@ Run `decomposer-capability`, `decomposer-context` and `decomposer-data` in paral
 For each service in join order:
 1. **ADR SAVED** - the architecture agent writes its creation ADR (with impact list); scribe updates STATE.
 2. **JOINED** - run `service-owner` for this service in GATHERING mode with file paths.
-3. **Gathering rounds** - it writes REQUEST entries in the contract logs; run `service-owner` in ANSWERING mode for each addressed CREATED service **in parallel**; they log ACCEPT/REJECT/MODIFY and may ask back. Facts go to a research subagent; business facts to the user. Max 4 rounds.
+3. **Gathering rounds** - it writes REQUEST entries in the contract logs; run `service-owner` in ANSWERING mode for each addressed CREATED service **in parallel**; they log ACCEPT/REJECT/MODIFY and may ask back. Facts go to a research subagent; business facts to the user. Max `runs` rounds (default 2).
 4. **Creation check** - `gatekeeper` Job 1. CREATE -> scribe sets CREATED and adds carry-forward items to `open-items.md`. BLOCKED -> fix and loop, or reject.
 5. **Impact analysis** - the new owner in IMPACT ANALYSIS. NO REFACTOR NEEDED -> record. Proposal -> Phase 5 (boundary changes go through the architecture agent).
 

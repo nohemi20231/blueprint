@@ -3,7 +3,7 @@ name: blueprint
 description: Use before writing code for a microservices system or a change to one. Frames the product with the user first, then orchestrates scout, decomposer, architecture-agent, service-owner, compliance, cost, operator, refactor-reviewer, gatekeeper and scribe agents to produce an evidence-based architecture and MVP software design, with ADR-gated service creation, file-based state and plain-language checkpoints. Also resumes a design from docs/architecture/STATE.md.
 ---
 
-# Blueprint - architecture design orchestrator (v2.3)
+# Blueprint - architecture design orchestrator (v2.5)
 
 You run this in the **main session**, because only the main session can ask the user questions. Agents do the design work; you route, decide what runs next, and bring the user short, plain-language checkpoints. **No code is written before the architecture approval gate (rules G1-G4):** all main services created, contracts agreed, reviews done, and the user's approval recorded in `docs/architecture/APPROVAL.md`. You do not write code either, and you refuse requests to do so before approval, pointing to G1.
 
@@ -13,7 +13,7 @@ You run this in the **main session**, because only the main session can ask the 
 |---|---|---|
 | `product-framer` | Confirms what the product is, in the user's words | First; again on any direction change |
 | `scout` | Production risks, market, existing systems, with sources | After the brief is confirmed; again on direction change or new territory |
-| `decomposer` | Proposes a service split with one strategy | 3 in parallel: A, B, C |
+| `decomposer` | Proposes a service split with one strategy | In parallel, one per run (see Runs): A, C, then B |
 | `architecture-agent` | Decides the service map, boundaries, cross-cutting owners and cross-service flows; owns the architecture and sequence diagrams | From Phase 3 to the end; record its ID; continue with SendMessage |
 | `service-owner` | Owns one service end to end | One per service; record its ID in STATE.md; continue with SendMessage |
 | `compliance-reviewer` | Owns compliance findings (not legal advice) | Checkpoint 2 and final review; on new personal data, payments or recording |
@@ -42,10 +42,22 @@ All agents preload `design-rulebook`. If `docs/architecture/rulebook.md` exists,
 `~/.claude/hooks/no-code-before-approval.sh` blocks any Write/Edit outside `docs/`, `.claude/`, `CLAUDE.md`, `README.md` and `RESUME.md` while the project has `docs/architecture/` and no `APPROVAL.md` with **Status: APPROVED**. Enable it per project by copying `hooks/project-settings.example.json` into the project's `.claude/settings.json` (merge with existing hooks). At Phase 0, if the project has no such hook, offer once to add it. It does not watch shell commands, so G1 still applies to them.
 
 ## Cost controls
-- Cap rounds: gathering max 4, refactor sessions 2 rounds, implementation questioning 1 round.
+- Cap rounds: gathering max `runs` (default 2), refactor sessions 2 rounds, implementation questioning 1 round.
 - Batch questions per agent per round; keep agent replies short and details in files.
 - Run compliance, cost and operator reviews at the checkpoints listed, not continuously.
 - Use the models set in the agent files (judgment roles on the strongest model; scout, cost, operator on a mid model; scribe on a small one).
+
+## Runs (default 2)
+`runs` sets how much parallel and repeated work a design does. Default **2**; the user can change it at start (`/blueprint runs=3`, combinable with `routed`) or at any checkpoint ("use 3 runs from now on"). Allowed 1-4. Record it in `STATE.md` and keep it on resume.
+
+| runs | Decomposers (Phase 3) | Max gathering rounds per service |
+|---|---|---|
+| 1 | A only | 1 |
+| 2 (default) | A and C | 2 |
+| 3 | A, B, C | 3 |
+| 4 | A, B, C | 4 |
+
+With one decomposer there is no cross-strategy agreement, so the architecture agent marks every boundary as an agent decision and Checkpoint 2 says so. When gathering hits the cap with open REQUESTs, carry them to `open-items.md` with a revisit trigger instead of running another round; tell the user they can raise `runs` if a service keeps hitting the cap. Refactor sessions keep their 2 rounds (they ask two different questions) and implementation questioning stays at 1 round.
 
 ## Pace
 - **`slow` (default):** every checkpoint goes to the user; increment 1 covers only the core customer journey with the fewest services.
@@ -79,7 +91,7 @@ Write `requirements.md` from the brief (numbered R1..). Run `scout` with the bri
 **Checkpoint 1b - Requirements and risks:** requirement titles (scout additions marked), increment scope, top 3-5 production risks, what the market looks like, the scout's questions.
 
 ## Phase 3 - Decomposition and early reviews
-Run 3 `decomposer` agents in parallel (A, B, C). Spawn the `architecture-agent` in MAP DECISION mode with their proposals: it chooses or blends (agreement means a sound boundary), decides the owner of every cross-cutting capability (B7), writes the ADR, the architecture diagram and the draft charters, and gives the join order. Then, in parallel, run `compliance-reviewer`, `cost-analyst` and `operator-advocate` on its map. Every service is PROPOSED.
+Run the `decomposer` agents for the current `runs` in parallel (default 2: A and C). Spawn the `architecture-agent` in MAP DECISION mode with their proposals: it chooses or blends (agreement means a sound boundary), decides the owner of every cross-cutting capability (B7), writes the ADR, the architecture diagram and the draft charters, and gives the join order. Then, in parallel, run `compliance-reviewer`, `cost-analyst` and `operator-advocate` on its map. Every service is PROPOSED.
 
 **Checkpoint 2 - Service map:** the architecture diagram first, then the user flow mapped to services, then a table (service, purpose, data owned, join order, cross-cutting owners), compliance gaps, expected cost per transaction, the operator's top problems, and the one-way-door decisions for the user.
 
@@ -89,7 +101,7 @@ Run 3 `decomposer` agents in parallel (A, B, C). Spawn the `architecture-agent` 
 For each service in join order:
 1. **ADR SAVED** - the architecture agent writes its creation ADR (with impact list); scribe updates STATE.
 2. **JOINED** - spawn `service-owner` in GATHERING mode with file paths. Record its ID in STATE.
-3. **Gathering rounds** - it writes REQUEST entries in the contract logs; send ANSWERING to each addressed CREATED owner **in parallel**; they log ACCEPT/REJECT/MODIFY and may ask back. Facts go to a research agent; business facts to the user. Max 4 rounds.
+3. **Gathering rounds** - it writes REQUEST entries in the contract logs; send ANSWERING to each addressed CREATED owner **in parallel**; they log ACCEPT/REJECT/MODIFY and may ask back. Facts go to a research agent; business facts to the user. Max `runs` rounds (default 2).
 4. **Creation check** - `gatekeeper` Job 1. CREATE -> scribe sets CREATED and adds carry-forward items to `open-items.md`. BLOCKED -> fix and loop, or reject.
 5. **Impact analysis** - the new owner in IMPACT ANALYSIS. NO REFACTOR NEEDED -> record. Proposal -> Phase 5 (boundary changes go through the architecture agent).
 

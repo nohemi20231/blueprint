@@ -33,6 +33,7 @@ Restart Claude Code, then:
 |---|---|
 | `/agents` | Should list the 11 Blueprint agents |
 | `/blueprint` | Start a new design in the current project |
+| `/blueprint runs=3` | Start with more parallel decomposers and gathering rounds (default 2, allowed 1-4) |
 | `/blueprint resume` | Pick up a design from `docs/architecture/STATE.md` |
 
 To update later: `git pull && ./install.sh`.
@@ -43,7 +44,7 @@ To update later: `git pull && ./install.sh`.
 |---|---|---|
 | 1. Frame the product | product-framer | One-paragraph brief + customer user flow. You confirm it. |
 | 2. Requirements and research | scout | Production risks, market, competitors, existing systems to connect to |
-| 3. Service map | 3 decomposers propose, architecture-agent decides | **Architecture diagram first**, then the user flow mapped to services, cost, compliance and real-world fit |
+| 3. Service map | 2 decomposers propose (set with `runs`), architecture-agent decides | **Architecture diagram first**, then the user flow mapped to services, cost, compliance and real-world fit |
 | 4. Services join one at a time | one service agent per service, gatekeeper | Each service created only after its decision record is saved and its contracts are agreed by both sides |
 | **Gate** | gatekeeper + you | What you are approving, and what must not be built yet. **Your approval unlocks coding.** |
 | 5. Implementation design | each service agent | Classes, ports and state machines per service, test plan |
@@ -57,7 +58,7 @@ At any point you can change direction: work stops, the new direction is repeated
 |---|---|---|
 | `product-framer` | Confirms what the product is, in your words; owns the customer user flow | opus |
 | `scout` | Production risks, market and competitors, existing systems, with sources | sonnet |
-| `decomposer` | Proposes a service split with one strategy (run 3 in parallel) | opus |
+| `decomposer` | Proposes a service split with one strategy (one per run, default 2) | opus |
 | `architecture-agent` | Decides services, boundaries, shared-area owners and cross-service flows; owns the architecture and sequence diagrams | opus |
 | `service-owner` | Owns one service end to end; one agent per service | opus |
 | `compliance-reviewer` | Owns compliance findings (not legal advice) | opus |

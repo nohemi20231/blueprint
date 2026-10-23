@@ -2,6 +2,11 @@
 
 Each version came from a lesson in a real design session.
 
+## 2.5 - Runs setting, default 2
+- New `runs` setting (1-4, default 2) sets how many decomposers run in parallel and the maximum gathering rounds per service. Set it with `/blueprint runs=3` or at any checkpoint; it is saved in `STATE.md`.
+- Default is now 2 decomposers (A business capability and C data ownership; in Copilot, Claude and Gemini) and 2 gathering rounds, down from 3 and 4. Open requests at the cap go to `open-items.md` instead of another round.
+- *Why:* designs ran too long; the user wanted faster runs with fewer checks, and the number adjustable per design.
+
 ## 2.4 - GitHub Copilot version
 - New `copilot/` plugin for the GitHub Copilot app and CLI: the `/blueprint` orchestrator, the rulebook, 13 agents and the no-code gate. The repo is also a plugin marketplace (`.github/plugin/marketplace.json`).
 - Cross-model review: the gatekeeper and refactor reviewer run on GPT, and the three decomposers run on Claude, GPT and Gemini.

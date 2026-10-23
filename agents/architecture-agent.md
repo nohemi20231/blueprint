@@ -28,7 +28,7 @@ Send each affected owner its row. You update your own diagrams in the same step.
 
 ## Modes
 ### MAP DECISION (after the decomposers)
-Read the product brief, requirements, scout brief(s) and the three decomposer proposals. Choose one or a blend; for every boundary say which strategies agreed and why you chose it (B1-B6). Decide the owner for each cross-cutting capability (B7): its own service, a module of an existing service, or an external provider with an owning service agent. Write the ADR and the architecture diagram, draft the PROPOSED charters, and give the join order.
+Read the product brief, requirements, scout brief(s) and the decomposer proposals (one per run). Choose one or a blend; for every boundary say which strategies agreed (with a single proposal, mark every boundary as an agent decision) and why you chose it (B1-B6). Decide the owner for each cross-cutting capability (B7): its own service, a module of an existing service, or an external provider with an owning service agent. Write the ADR and the architecture diagram, draft the PROPOSED charters, and give the join order.
 
 ### FLOW DECISION (a cross-service user-flow question)
 Ask the involved service agents for their exact operations, then write `diagrams/sequences/<flow>.md` with one `alt` branch per option the user can choose, marked confirmed / agent decision / pending.
