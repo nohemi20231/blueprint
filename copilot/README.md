@@ -88,4 +88,4 @@ bash copilot/tests/gate-test.sh
 
 ## License
 
-Copyright 2026 Nohemi Gonzalez Lopez. Licensed under the [Apache License, Version 2.0](../LICENSE); keep the [`NOTICE`](../NOTICE) file when redistributing.
+[MIT](../LICENSE); keep the copyright and license notice when redistributing.

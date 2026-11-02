@@ -2,6 +2,10 @@
 
 Each version came from a lesson in a real design session.
 
+## 2.5.1 - MIT license
+- License changed from Apache-2.0 to MIT. `NOTICE` is removed; both READMEs and both plugin manifests say MIT. No agent, skill or hook changed.
+- *Why:* the same license as the other skill repos.
+
 ## 2.5 - Runs setting, default 2
 - New `runs` setting (1-4, default 2) sets how many decomposers run in parallel and the maximum gathering rounds per service. Set it with `/blueprint runs=3` or at any checkpoint; it is saved in `STATE.md`.
 - Default is now 2 decomposers (A business capability and C data ownership; in Copilot, Claude and Gemini) and 2 gathering rounds, down from 3 and 4. Open requests at the cap go to `open-items.md` instead of another round.

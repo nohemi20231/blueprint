@@ -119,7 +119,7 @@ docs/architecture/
 | `copilot/` | The GitHub Copilot version: plugin, 13 agents, skills, gate hook and its tests |
 | `install.sh` | Copies everything into `~/.claude` |
 | `CHANGELOG.md` | Versions, the reasons behind each change, known risks |
-| `LICENSE`, `NOTICE` | Apache License 2.0 and the attribution to keep when redistributing |
+| `LICENSE` | MIT License |
 
 ## Requirements
 
@@ -128,4 +128,4 @@ docs/architecture/
 
 ## License
 
-Copyright 2026 Nohemi Gonzalez Lopez. Licensed under the [Apache License, Version 2.0](LICENSE). You may use, change and share Blueprint, including commercially; keep the [`NOTICE`](NOTICE) file and mark the files you change.
+[MIT](LICENSE). You may use, change and share Blueprint, including commercially; keep the copyright and license notice in `LICENSE`.
