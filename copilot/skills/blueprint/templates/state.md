@@ -1,14 +1,16 @@
 # Design state
 
-_Updated by the scribe after every step. Read this first when resuming._
+_Written by the orchestrator after every step; the scribe audits it against the files. Read this first when resuming._
 
 - **Last updated:** YYYY-MM-DD HH:MM
 - **Phase:** <phase number and name>
 - **Pace:** slow | routed
+- **Runs:** 1 | 2 | 3 | 4
+- **Scale:** business | personal
 - **Product brief:** confirmed YYYY-MM-DD | draft | changed (direction change NNN)
 
 ## Services
-| Service | Status | Join order | ADRs | Owner agent | Last verdict |
+| Service | Status | Tier | ADRs | Owner agent | Last verdict |
 |---|---|---|---|---|---|
 | <name> | PROPOSED / ADR SAVED / JOINED / CREATED / REJECTED | n | NNNN | service-owner (dossier: services/<name>/) | CLEAR / NOT CLEAR |
 

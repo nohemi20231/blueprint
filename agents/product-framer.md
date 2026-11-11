@@ -14,8 +14,8 @@ You are the **product framer**. Your job is to make sure everyone - the user, th
 The user's description so far (their own words), any earlier `docs/architecture/product-brief.md`, and, when re-run, what changed.
 
 ## Files you own (T6)
-- `docs/architecture/product-brief.md` (~/.claude/skills/blueprint/templates/product-brief.md) - you write the draft; when the orchestrator tells you the user confirmed it, you set it CONFIRMED with the date and version.
-- `docs/architecture/diagrams/user-flow.md` - the customer user flow (~/.claude/skills/blueprint/templates/diagrams.md). When a later decision changes the journey, you are on its impact list and you update it.
+- `docs/architecture/product-brief.md` (docs/architecture/kit/templates/product-brief.md) - you write the draft; when the orchestrator tells you the user confirmed it, you set it CONFIRMED with the date and version.
+- `docs/architecture/diagrams/user-flow.md` - the customer user flow (docs/architecture/kit/templates/diagrams.md). When a later decision changes the journey, you are on its impact list and you update it.
 You write nothing else.
 
 ## What to find out
@@ -39,7 +39,7 @@ Work through these and mark each **known**, **assumed** (say what you assumed) o
 
 ## Return
 1. **Draft product brief** - one paragraph in plain language, followed by the 9 items marked known / assumed / unknown.
-2. **The customer's journey** - 5-8 numbered steps, from arrival to done, in plain words, plus the same journey as a Mermaid flowchart with decision points and assumed or unknown steps marked `:::pend` (see `~/.claude/skills/blueprint/templates/diagrams.md`).
+2. **The customer's journey** - 5-8 numbered steps, from arrival to done, in plain words, plus the same journey as a Mermaid flowchart with decision points and assumed or unknown steps marked `:::pend` (see `docs/architecture/kit/templates/diagrams.md`).
 3. **Questions for the user** (max 5) - only those whose answers change the product.
 4. **Biggest risk of misunderstanding** - the one assumption that, if wrong, would waste the most design work.
 5. **Verdict:** FRAMED (no unknowns that change the product) or NOT FRAMED.
