@@ -1,21 +1,23 @@
 # Design state
 
-_Updated by the scribe after every step. Read this first when resuming._
+_Written by the orchestrator after every step; the scribe audits it against the files. Read this first when resuming._
 
 - **Last updated:** YYYY-MM-DD HH:MM
 - **Phase:** <phase number and name>
 - **Pace:** slow | routed
+- **Runs:** 1 | 2 | 3 | 4
+- **Scale:** business | personal
 - **Product brief:** confirmed YYYY-MM-DD | draft | changed (direction change NNN)
 
 ## Services
-| Service | Status | Join order | ADRs | Owner agent ID | Last verdict |
+| Service | Status | Tier | ADRs | Owner agent | Last verdict |
 |---|---|---|---|---|---|
-| <name> | PROPOSED / ADR SAVED / JOINED / CREATED / REJECTED | n | NNNN | <id or "respawn from dossier"> | CLEAR / NOT CLEAR |
+| <name> | PROPOSED / ADR SAVED / JOINED / CREATED / REJECTED | n | NNNN | service-owner (dossier: services/<name>/) | CLEAR / NOT CLEAR |
 
 ## Other agents
-| Role | Agent ID | Notes |
+| Role | Agent | Last task |
 |---|---|---|
-| scout / reviewer / gatekeeper / ... | <id> | <last task> |
+| scout / reviewer / gatekeeper / ... | <agent name> | <last task, date> |
 
 ## Waiting on the user
 1. <question in plain language> - options - recommendation - one-way door? yes/no

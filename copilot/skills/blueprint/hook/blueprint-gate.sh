@@ -1,16 +1,23 @@
 #!/usr/bin/env bash
-# Blueprint no-code gate (rule G1) for GitHub Copilot (app, CLI, cloud agent,
-# VS Code) and Claude Code.
+# Blueprint no-code gate (rule G1) for Claude Code and GitHub Copilot (app, CLI,
+# cloud agent, VS Code). One script for both: this file is the source, and
+# scripts/build-copilot.py copies it to copilot/skills/blueprint/hook/blueprint-gate.sh.
 #
 # Blocks creating or editing files outside the design files while the project
 # has docs/architecture/ and docs/architecture/APPROVAL.md does not say
 # "**Status:** APPROVED". Projects without docs/architecture/ are not affected.
+#
+# Per-branch lock (optional): once a file under docs/architecture/ carries a line
+# "- **Branch:** <name>", code is written only on a branch that has such a file
+# with "- **Status:** APPROVED". Branches named fix/* or chore/* are exempt.
 #
 # Reads one hook payload on stdin. Understands:
 #   - Copilot CLI / app:  {"toolName": "...", "toolArgs": "<json string or object>", "cwd": ...}
 #   - VS Code / Claude:   {"tool_name": "...", "tool_input": {...}, "cwd": ...}
 # Allow: exit 0, no output. Block: deny JSON on stdout, reason on stderr, exit 2.
 # Writing APPROVAL.md itself: "ask" JSON, so the user confirms the write that unlocks coding.
+# The lock's own files (.claude/settings*.json, .github/hooks/blueprint-gate.*) may be
+# created once and not edited before approval; the rest of .claude/ counts as code.
 # The gate watches file tools, not shell commands; rule G1 covers those.
 
 input="$(cat)"
@@ -21,7 +28,7 @@ if ! command -v python3 >/dev/null 2>&1; then
 fi
 
 GATE_INPUT="$input" GATE_DIR="${CLAUDE_PROJECT_DIR:-}" python3 -I - <<'PY'
-import json, os, re, sys
+import json, os, re, subprocess, sys
 
 EDIT_TOOLS = {
     # Copilot CLI / app / cloud agent
@@ -39,7 +46,11 @@ PATH_KEYS = ("path", "file_path", "filePath", "filepath", "filename", "file", "d
 LIST_KEYS = ("files", "paths", "filePaths", "edits", "replacements")
 ALLOWED = ("AGENTS.md", "CLAUDE.md", "README.md", "RESUME.md", ".github/copilot-instructions.md")
 APPROVAL = "docs/architecture/APPROVAL.md"
-PROJECT_GATE = (".github/hooks/blueprint-gate.sh", ".github/hooks/blueprint-gate.json")
+PROJECT_GATE = (".github/hooks/blueprint-gate.sh", ".github/hooks/blueprint-gate.json",
+                ".claude/settings.json", ".claude/settings.local.json")
+BRANCH_LINE = re.compile(r"^- \*\*Branch:\*\* (.+?)\s*$", re.M)
+BRANCH_APPROVED = re.compile(r"^- \*\*Status:\*\* APPROVED", re.M)
+EXEMPT_BRANCHES = ("fix/", "chore/")
 PATCH_LINE = re.compile(r"^\*\*\* (?:Add|Update|Delete) File: (.+?)\s*$|^\*\*\* Move to: (.+?)\s*$", re.M)
 
 
@@ -97,7 +108,38 @@ def approved(root):
     except OSError:
         return False
     text = re.sub(r"^```.*?^```", "", text, flags=re.M | re.S)  # ignore fenced examples
-    return re.search(r"^\*\*Status:\*\*\s*APPROVED\s*$", text, re.M) is not None
+    return re.search(r"^(?:- )?\*\*Status:\*\*\s*APPROVED\s*$", text, re.M) is not None
+
+
+def branch_block(root, cache={}):
+    """None when the per-branch lock allows code in this project, else the branch name."""
+    if root in cache:
+        return cache[root]
+    proposals = []  # (branch named in the file, file has an APPROVED status line)
+    design = os.path.join(root, "docs", "architecture")
+    for folder, dirs, files in os.walk(design):
+        dirs[:] = [d for d in dirs if not (folder == design and d == "kit")]
+        for name in files:
+            if not name.endswith(".md"):
+                continue
+            try:
+                with open(os.path.join(folder, name), encoding="utf-8") as fh:
+                    text = fh.read()
+            except (OSError, UnicodeDecodeError):
+                continue
+            for branch in BRANCH_LINE.findall(text):
+                proposals.append((branch, BRANCH_APPROVED.search(text) is not None))
+    result = None
+    if proposals:  # the lock is on only where proposals name their branch
+        try:
+            branch = subprocess.run(["git", "-C", root, "rev-parse", "--abbrev-ref", "HEAD"],
+                                    capture_output=True, text=True, timeout=5).stdout.strip()
+        except (OSError, subprocess.SubprocessError):
+            branch = ""
+        if not branch.startswith(EXEMPT_BRANCHES) and (branch, True) not in proposals:
+            result = branch or "unknown"
+    cache[root] = result
+    return result
 
 
 def decide(decision, reason):
@@ -128,7 +170,7 @@ cwd = payload.get("cwd") or os.environ.get("GATE_DIR") or os.getcwd()
 paths = []
 collect(load(payload.get("toolArgs", payload.get("tool_input"))), paths)
 
-blocked, approval_writes = [], []
+blocked, branch_blocked, approval_writes = [], [], []
 for raw in paths:
     full = os.path.realpath(raw if os.path.isabs(raw) else os.path.join(cwd, raw))
     root = project_root(os.path.dirname(full))
@@ -138,19 +180,28 @@ for raw in paths:
     if rel == APPROVAL:
         approval_writes.append(rel)
         continue
-    if approved(root):
+    if rel in ALLOWED or rel.startswith("docs/"):
         continue
-    if rel in ALLOWED or (rel.startswith("docs/") and rel != APPROVAL):
+    if not approved(root):
+        if rel in PROJECT_GATE and not os.path.exists(full):
+            continue  # Phase 0 may add the project lock once; never edit it before approval
+        blocked.append(rel)
         continue
-    if rel in PROJECT_GATE and not os.path.exists(full):
-        continue  # Phase 0 may add the project lock once; never edit it afterwards
-    blocked.append(rel)
+    branch = branch_block(root)
+    if branch is not None:
+        branch_blocked.append((rel, branch))
 
 if blocked:
     decide("deny",
            "Blocked by Blueprint rule G1: no code before the user approves the architecture. "
            f"'{blocked[0]}' is outside docs/. Finish the design and record the user's approval in "
            "docs/architecture/APPROVAL.md (**Status:** APPROVED) first.")
+if branch_blocked:
+    rel, branch = branch_blocked[0]
+    decide("deny",
+           f"Blocked by Blueprint: branch '{branch}' has no approved proposal, and '{rel}' is code. "
+           f"Write the proposal under docs/architecture/ with '- **Branch:** {branch}' and get it to "
+           "'- **Status:** APPROVED', or use a fix/* or chore/* branch for a small fix.")
 if approval_writes:
     decide("ask",
            "Blueprint: this changes docs/architecture/APPROVAL.md, which unlocks coding. "

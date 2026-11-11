@@ -34,9 +34,10 @@ Restart Claude Code, then:
 | `/agents` | Should list the 11 Blueprint agents |
 | `/blueprint` | Start a new design in the current project |
 | `/blueprint runs=3` | Start with more parallel decomposers and gathering rounds (default 2, allowed 1-4) |
+| `/blueprint scale=personal` | A product for one person on their own data: fewer reviews, lighter process |
 | `/blueprint resume` | Pick up a design from `docs/architecture/STATE.md` |
 
-To update later: `git pull && ./install.sh`.
+To update later: `git pull && ./install.sh`. If a file in `~/.claude` was edited in place, the installer saves it to `~/.claude/.blueprint-backup-<time>/` before replacing it and tells you.
 
 ## How a design runs
 
@@ -45,7 +46,7 @@ To update later: `git pull && ./install.sh`.
 | 1. Frame the product | product-framer | One-paragraph brief + customer user flow. You confirm it. |
 | 2. Requirements and research | scout | Production risks, market, competitors, existing systems to connect to |
 | 3. Service map | 2 decomposers propose (set with `runs`), architecture-agent decides | **Architecture diagram first**, then the user flow mapped to services, cost, compliance and real-world fit |
-| 4. Services join one at a time | one service agent per service, gatekeeper | Each service created only after its decision record is saved and its contracts are agreed by both sides |
+| 4. Services join tier by tier | one service agent per service, gatekeeper | Services that do not depend on each other join together. Each is created only after its decision record is saved and its contracts are agreed by both sides |
 | **Gate** | gatekeeper + you | What you are approving, and what must not be built yet. **Your approval unlocks coding.** |
 | 5. Implementation design | each service agent | Classes, ports and state machines per service, test plan |
 | 6. Final review | gatekeeper | A 3-minute summary that routes READY, NEEDS YOUR DECISION or NEEDS MORE INFORMATION |
@@ -65,8 +66,8 @@ At any point you can change direction: work stops, the new direction is repeated
 | `cost-analyst` | Cost per transaction and break-even, with dated prices | sonnet |
 | `operator-advocate` | Real-world fit for the business, its staff and customers | sonnet |
 | `refactor-reviewer` | Neutral judge of refactors and direction changes | opus |
-| `gatekeeper` | Creation checks, the approval gate, the final summary | opus |
-| `scribe` | Keeps the state file, open items and decision index | haiku |
+| `gatekeeper` | Scope check, creation checks, the approval gate, the final summary | opus |
+| `scribe` | Sets status markers; keeps open items, the decision index and risks; audits the state file | haiku |
 
 Skills: `blueprint` (the orchestrator, runs in your main session) and `design-rulebook` (the rules every agent loads).
 
@@ -78,7 +79,8 @@ Skills: `blueprint` (the orchestrator, runs in your main session) and `design-ru
 | T6 | The decider records the decision and updates every diagram it owns; an impact list sends the rest to their owners | Whoever decides, updates |
 | U4 | Every checkpoint opens with the architecture diagram; elements marked confirmed / agent decision / pending | You see the picture first |
 | B6 | Generalize only what would break later; no features "for later" | Build for now, stay ready for later |
-| K5 | Every contract change is logged and accepted by both services | Agreements are written down and signed |
+| K5 | Every contract change is logged and accepted by both services; what cannot be settled in time is deferred by both and not built | Agreements are written down and signed |
+| SC-1 | A requirement enters scope only with the user's words, a cited failure or a cited rule; the rest is parked | Nothing gets added just because nobody objected |
 | A4 | Outcomes counted as AI alone / with human help / needed a fix | Honest accuracy numbers |
 | T4 | "Not sure" means the safe, reversible default plus a reminder | You never get stuck on a question |
 
@@ -86,13 +88,22 @@ The full list is in [`skills/design-rulebook/SKILL.md`](skills/design-rulebook/S
 
 ## Optional: the no-code lock
 
-A Claude Code hook that blocks creating or editing files outside `docs/` until `docs/architecture/APPROVAL.md` says **Status: APPROVED**. Turn it on per project:
+A Claude Code hook that blocks creating or editing files outside `docs/` until `docs/architecture/APPROVAL.md` says **Status:** APPROVED. Turn it on per project:
 
 ```bash
 cd <your-project> && mkdir -p .claude && cp ~/.claude/hooks/project-settings.example.json .claude/settings.json
 ```
 
-If the project already has `.claude/settings.json`, merge the `hooks` section instead. Projects without `docs/architecture/` are not affected. The lock watches file edits, not shell commands; rule G1 covers those.
+If the project already has `.claude/settings.json`, merge the `hooks` section instead. Projects without `docs/architecture/` are not affected.
+
+| What the lock does | Why |
+|---|---|
+| Blocks file edits outside `docs/` and a few root files until approval | Rule G1 |
+| Asks you to confirm any write to `APPROVAL.md` | No agent can approve its own design |
+| Lets `.claude/settings.json` be created once, then blocks edits to it until approval | No agent can switch the lock off |
+| After approval, if a proposal under `docs/architecture/` has a line `- **Branch:** <name>`: allows code only on a branch whose proposal says `- **Status:** APPROVED` (`fix/*` and `chore/*` are exempt) | One approved proposal per branch |
+
+The lock watches file edits, not shell commands; rule G1 covers those. It needs `python3`; without it the lock prints a warning and lets the edit through. It is the same script the Copilot version uses, tested by `copilot/tests/gate-test.sh`.
 
 ## What a design produces
 
@@ -101,11 +112,14 @@ docs/architecture/
   product-brief.md        STATE.md            APPROVAL.md
   requirements.md         open-items.md       decision-log.md
   scout-brief.md          risks.md
+  kit/        RULEBOOK.md, templates/  (the rules and templates this design was made with)
+  proposals/  decomposer-A.md, decomposer-C.md
   diagrams/   architecture.md, user-flow.md, sequences/<flow>.md
   adr/        0001-....md  (one per decision)
   contracts/  <service-a>--<service-b>.md  (agreement logs)
   services/<name>/  charter.md, contracts.md, decisions.md, model.md, qa.md, implementation.md
-  reviews/    compliance, cost, operator
+  reviews/    compliance, cost, operator (map, gate, final), lint.md
+docs/parked.md            (ideas left out of scope, one line each)
 ```
 
 ## Repository layout
@@ -113,18 +127,35 @@ docs/architecture/
 | Path | Contents |
 |---|---|
 | `agents/` | The 11 agents, installed to `~/.claude/agents/` |
-| `skills/blueprint/` | The orchestrator and its templates |
+| `skills/blueprint/` | The orchestrator, its templates and the lint script |
 | `skills/design-rulebook/` | The shared rules |
 | `hooks/` | The no-code lock and an example project setting |
-| `copilot/` | The GitHub Copilot version: plugin, 13 agents, skills, gate hook and its tests |
-| `install.sh` | Copies everything into `~/.claude` |
+| `copilot/` | The GitHub Copilot version: plugin, 13 agents, skills, gate hook and its tests. Mostly generated, see below |
+| `scripts/` | `build-copilot.py` (generates `copilot/`) and `check.sh` (all tests) |
+| `tests/` | Tests for the lint script and the installer |
+| `install.sh` | Copies everything into `~/.claude`, backing up files that were edited there |
 | `CHANGELOG.md` | Versions, the reasons behind each change, known risks |
 | `LICENSE`, `NOTICE` | Apache License 2.0 and the attribution to keep when redistributing |
+
+## Changing Blueprint
+
+Edit the Claude Code files; the Copilot agents, rulebook, templates, gate and skill are generated from them. Copilot-only text lives in `copilot/skill-overrides.md` and the model table at the top of `scripts/build-copilot.py`.
+
+```bash
+python3 scripts/build-copilot.py
+```
+
+```bash
+bash scripts/check.sh
+```
+
+The check fails if `copilot/` is out of date, if a test fails, or if a prompt points at a path in the home folder. GitHub runs it on every pull request.
 
 ## Requirements
 
 - [Claude Code](https://code.claude.com/docs) with custom agents and skills
 - Bash (macOS or Linux) for `install.sh` and the optional hook
+- `python3` for the hook and the lint script
 
 ## License
 

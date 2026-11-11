@@ -12,7 +12,7 @@ All diagrams are Mermaid, saved as markdown files so they render on GitHub, in I
 
 When a decision changes a diagram owned by someone else, the decider puts that owner in its **impact list**; the owner updates its own diagram. The scribe never edits diagrams.
 
-Each file starts with a two-line explanation: **Technical:** one or two sentences; **Plainly:** the same in everyday words.
+Each file starts with a "Last updated" line and a two-line explanation: **Technical:** one or two sentences; **Plainly:** the same in everyday words. Checkpoints show the diagram and the Plainly line, and give this file's path for the technical one.
 
 ## Status marking (paste into every flowchart)
 ```

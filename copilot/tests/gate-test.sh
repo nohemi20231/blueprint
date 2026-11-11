@@ -6,7 +6,7 @@ set -u
 
 here="$(cd "$(dirname "$0")" && pwd)"
 gate="$here/../skills/blueprint/hook/blueprint-gate.sh"
-tmp="$(mktemp -d)"
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/gate-test.XXXXXX")"
 trap 'rm -rf "$tmp"' EXIT
 
 pass=0
@@ -139,6 +139,43 @@ expect 2 "APPROVED inside a code fence does not count" \
 printf '**Status:** APPROVED-pending\n' >"$h/docs/architecture/APPROVAL.md"
 expect 2 "APPROVED-pending does not count" \
   "{\"toolName\":\"create\",\"cwd\":\"$h\",\"toolArgs\":{\"path\":\"src/E.java\"}}"
+
+# Claude Code project settings: created once, never edited before approval
+c="$(new_project claude-lock)"
+expect 0 "creating .claude/settings.json allowed once" \
+  "{\"tool_name\":\"Write\",\"cwd\":\"$c\",\"tool_input\":{\"file_path\":\"$c/.claude/settings.json\"}}"
+mkdir -p "$c/.claude" && echo '{}' >"$c/.claude/settings.json"
+expect 2 "editing existing .claude/settings.json blocked" \
+  "{\"tool_name\":\"Edit\",\"cwd\":\"$c\",\"tool_input\":{\"file_path\":\"$c/.claude/settings.json\"}}"
+expect 2 "other files under .claude/ blocked" \
+  "{\"tool_name\":\"Write\",\"cwd\":\"$c\",\"tool_input\":{\"file_path\":\"$c/.claude/app/Main.java\"}}"
+expect 2 "NotebookEdit blocked" \
+  "{\"tool_name\":\"NotebookEdit\",\"cwd\":\"$c\",\"tool_input\":{\"notebook_path\":\"$c/nb/a.ipynb\"}}"
+printf -- '- **Status:** APPROVED\n' >"$c/docs/architecture/APPROVAL.md"
+expect 0 "list-style status line counts as approved" \
+  "{\"tool_name\":\"Write\",\"cwd\":\"$c\",\"tool_input\":{\"file_path\":\"$c/src/a.py\"}}"
+
+# Per-branch lock: on only where a proposal names its branch
+b="$(new_project branch-lock)"
+approve "$b"
+git -C "$b" init -q -b main 2>/dev/null || { git -C "$b" init -q && git -C "$b" checkout -q -b main; }
+git -C "$b" -c user.name=t -c user.email=t@example.invalid commit -q --allow-empty -m init
+mkdir -p "$b/docs/architecture/proposals"
+printf -- '- **Branch:** feature/a\n- **Status:** APPROVED\n' >"$b/docs/architecture/proposals/a.md"
+printf -- '- **Branch:** feature/b\n- **Status:** DRAFT\n' >"$b/docs/architecture/proposals/b.md"
+expect 2 "branch without a proposal blocked" \
+  "{\"tool_name\":\"Write\",\"cwd\":\"$b\",\"tool_input\":{\"file_path\":\"$b/src/a.py\"}}"
+expect 0 "design files still allowed on any branch" \
+  "{\"tool_name\":\"Write\",\"cwd\":\"$b\",\"tool_input\":{\"file_path\":\"$b/docs/architecture/proposals/c.md\"}}"
+git -C "$b" checkout -q -b feature/a
+expect 0 "branch with an approved proposal allowed" \
+  "{\"tool_name\":\"Write\",\"cwd\":\"$b\",\"tool_input\":{\"file_path\":\"$b/src/a.py\"}}"
+git -C "$b" checkout -q -b feature/b
+expect 2 "branch with a draft proposal blocked" \
+  "{\"tool_name\":\"Write\",\"cwd\":\"$b\",\"tool_input\":{\"file_path\":\"$b/src/a.py\"}}"
+git -C "$b" checkout -q -b fix/typo
+expect 0 "fix/* branch exempt" \
+  "{\"tool_name\":\"Write\",\"cwd\":\"$b\",\"tool_input\":{\"file_path\":\"$b/src/a.py\"}}"
 
 echo "passed: $pass, failed: $fail"
 [ "$fail" = 0 ]
