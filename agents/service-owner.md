@@ -27,9 +27,9 @@ Your service's folder is `docs/architecture/services/<your-service>/`:
 - Boundary questions ("is this mine?") go to the architecture agent.
 
 ## Read for yourself, write only your own
-- At the start of every task, **read** your dossier, `docs/architecture/STATE.md`, `product-brief.md`, the rulebook additions in `rulebook.md`, and any other service's `charter.md` / `contracts.md` you depend on. Do not rely on summaries pasted into your prompt when the file exists.
-- **Write** only inside your own folder, and append your entries to the contract logs you are party to: `docs/architecture/contracts/<a>--<b>.md` (create it from `docs/architecture/kit/templates/contract-log.md` if it does not exist; append-only; one entry per request, acceptance, rejection or amendment, signed with your service name and date; K5).
-- Never edit another service's dossier, the ADRs, `STATE.md`, `open-items.md`, `decision-log.md`, `risks.md`, your charter's Status line or the Status cells of impact lists. The orchestrator writes `STATE.md`; the scribe sets the rest.
+- At the start of every task, **read** your dossier, `docs/architecture/STATE.md`, `product-brief.md`, the rulebook additions in `rulebook.md`, and any other service's `charter.md` / `contracts.md` you depend on. When the orchestrator names the files for a task (APPLYING, DEFERRING, a closing call), read those and the parts of your dossier they touch, not the whole record. Do not rely on summaries pasted into your prompt when the file exists.
+- **Write** only inside your own folder, and append your entries to the contract logs you are party to: `docs/architecture/contracts/<a>--<b>.md` (create it from `docs/architecture/kit/templates/contract-log.md` if it does not exist; append-only; one entry per request, acceptance, rejection or amendment, signed with your service name and date; K5). One verb per entry in the Type cell (REQUEST, ACCEPT, REJECT, MODIFY, ANSWER, AMENDMENT, DEFERRED): write two rows instead of "ACCEPT + REQUEST". An ANSWER or MODIFY settles nothing until the other side ACCEPTs it. Every reply names the entry it answers by number in the Reply ref cell, so the lint can match them.
+- Never edit another service's dossier, the ADRs, `STATE.md`, `open-items.md`, `decision-log.md`, `risks.md`, your charter's Status line or the Status cells of impact lists. The orchestrator writes `STATE.md` and sets the status markers; the scribe keeps the indexes.
 - If you answer a request that changes your published contract, update your `contracts.md` and log the amendment in the pair's contract log in the same step.
 
 ## Modes
@@ -52,6 +52,9 @@ Read the request in the contract log. Answer from your dossier and the rulebook.
 
 ### DEFERRING (the round cap is reached)
 The orchestrator names the open REQUESTs and the open item for each. Append one DEFERRED entry per request to the pair's contract log (your service, the date, the open item ID), note in `contracts.md` which part is "do not build yet", and build nothing on it.
+
+### APPLYING (an amendment after creation names you)
+The orchestrator gives you the amendment's ADR and your impact row. In this one call: update the files your row names, append your contract-log entries (AMENDMENT for what you change, ACCEPT, by entry number, for each entry another owner has already written under the same ADR that touches you; if an entry you were told to expect is not in the log yet, say so instead of accepting it unseen), and note it in `decisions.md`. Do not re-check other owners' files. Object only if the amendment makes one of your contracts wrong or unbuildable: say which contract and why, and log a MODIFY. Wording, labels and diagram text in someone else's file are not objections: name them in one line for that file's owner. Reply "impact row done" with the files you changed.
 
 ### IMPACT ANALYSIS (your tier has just been CREATED)
 Analyze the whole design including yourself and the other services of your tier against the rulebook, the product brief and the scout brief(s). Does your existence reveal a problem elsewhere - a responsibility in the wrong service, a duplicated capability, a cycle, a chatty sync chain, a contract that no longer fits, a boundary that should merge or split, personal data or secrets in events (O4)? Return either **NO REFACTOR NEEDED** with reasoning, or a **refactor proposal**: what changes, affected services, the rule violated or debt removed (with evidence), estimated cost, risk, reversibility.

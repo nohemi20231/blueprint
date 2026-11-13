@@ -8,6 +8,7 @@ run() { echo "== $*"; "$@" || status=1; }
 run python3 scripts/build-copilot.py --check
 run bash copilot/tests/gate-test.sh
 run bash tests/lint-test.sh
+run bash tests/record-test.sh
 run bash tests/install-test.sh
 for f in install.sh hooks/no-code-before-approval.sh scripts/check.sh; do run bash -n "$f"; done
 

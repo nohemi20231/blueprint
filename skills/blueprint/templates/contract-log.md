@@ -1,6 +1,6 @@
 # Contract log: <service-a> <-> <service-b>
 
-_Append-only (K5). Names in alphabetical order. Each side writes its own entries. A contract is agreed only when every REQUEST has an ACCEPT (or an agreed MODIFY) from the other side, or a DEFERRED entry from each side naming the same open item; a deferred part is "do not build yet"._
+_Append-only (K5). Names in alphabetical order. Each side writes its own entries. A contract is agreed only when every REQUEST has an ACCEPT (or an agreed MODIFY) from the other side, or a DEFERRED entry from each side naming the same open item; a deferred part is "do not build yet". One verb per entry in Type (REQUEST, ACCEPT, REJECT, MODIFY, ANSWER, AMENDMENT, DEFERRED); a MODIFY or ANSWER needs an ACCEPT from the other side. A reply names the entry it answers by number in Reply ref (`3`, `3, 5`, `6-10`); the lint matches replies to requests by these numbers._
 
 **Current status:** AGREED on <date> | OPEN (<n> requests waiting)
 **Contracts covered:** <API / event names and versions>

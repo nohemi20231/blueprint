@@ -67,7 +67,7 @@ At any point you can change direction: work stops, the new direction is repeated
 | `operator-advocate` | Real-world fit for the business, its staff and customers | sonnet |
 | `refactor-reviewer` | Neutral judge of refactors and direction changes | opus |
 | `gatekeeper` | Scope check, creation checks, the approval gate, the final summary | opus |
-| `scribe` | Sets status markers; keeps open items, the decision index and risks; audits the state file | haiku |
+| `scribe` | Keeps open items, the decision index and risks; audits the state file | haiku |
 
 Skills: `blueprint` (the orchestrator, runs in your main session) and `design-rulebook` (the rules every agent loads).
 

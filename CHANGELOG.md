@@ -2,6 +2,25 @@
 
 Each version came from a lesson in a real design session.
 
+## 2.7 - Lessons from two approval gates
+Each row comes from mining the sessions of a real design at its approval gate, before and after 2.6.
+
+| Change | Why |
+|---|---|
+| The lint reads real contract logs: compound types (`ACCEPT (#3)`, `OFFER + REQUEST`), `#n` references in the Type and Subject cells, ranges, `ACK` and accepted `ANSWER` replies, counter-amendments, `20a` entry numbers, and notes on a charter's ADRs line. A reply counts only from the other service and a REJECT never accepts. 37 tests, up from 14 | On three real records it reported 79, 31 and 5 FAILs, nearly all from the parser; the gatekeeper had to rule them out by hand and the gate opened with 79 FAILs |
+| The lint also fails an open item past its due date and a diagram older than a done impact row that names it, and counts uncommitted files | Three gate checks in a row closed on stale text and due dates, not on design |
+| The orchestrator may not hand the gatekeeper a report with a FAIL; the gatekeeper reports every failing item in one run | Six gate runs were needed to open one gate |
+| `blueprint-record.py` sets charter, contract-log and impact-row status and archives closed rows (36 tests). The scribe keeps only the indexes | One scribe call made 87 edits at 309K tokens of context, and most tool errors were its failed text matches |
+| Amendment path: one new ADR per batch of changes, routed by its impact list to the affected owners only; one APPLYING call per owner; no confirmation round | One batch of user answers after creation started 41 service-owner agents in four waves and cost about $200 |
+| `archive` moves CLOSED open items and Superseded decisions out of the main files; one decision per ADR, no amendment sections; agents are given exact files | `open-items.md` had grown to 102 KB and one ADR to 138 KB, so a one-entry acknowledgement cost 105K tokens |
+| Outside review before the gate check: one general-purpose agent with no rulebook writes `reviews/outside-gate.md` | An independent reviewer found 3 blockers after the team's own reviews had passed, including that nobody owned the runtime platform |
+| Resume shows where the design stands and waits; one orchestrator per design; `STATE.md` tells the orchestrator to load the skill again after a context summary | A resume started agents in its first turn and a second session repeated it, leaving two agents running; after two summaries one session ran without the skill loaded |
+| A record from an older version: the kit is replaced, and the user is told what it does not follow yet | A 2.5 record resumed under 2.6 kept ten modules of one deployable as ten services |
+| Approval must be a sentence the user typed; a button is not approval | An approval page accepted a click with an empty box next to an answer that contradicted it |
+| One line per step between checkpoints, not one message per agent return | 56 messages were written with nobody reading |
+
+Not verified in a real design yet: Phases 0-3 under 2.6 or 2.7 (tiers, DEFERRED entries, `scale`, the one-service map), and the amendment path.
+
 ## 2.6 - Scope rules, one tested gate, tiers, one source for both versions
 | Change | Why |
 |---|---|

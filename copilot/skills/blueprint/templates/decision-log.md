@@ -1,6 +1,6 @@
 # Decision log
 
-_Index of every decision, kept by the scribe. One row per decision, numbered, never renumbered. The record itself lives in the ADR or the service's `decisions.md`._
+_Index of every decision, kept by the scribe. One row per decision, numbered, never renumbered. The record itself lives in the ADR or the service's `decisions.md`. Superseded rows are moved to `decision-log-archive.md` at each checkpoint._
 
 | # | Date | Decision (one line) | Decided by | Record | Door | Debt risk | Impact rows done | Status |
 |---|---|---|---|---|---|---|---|---|

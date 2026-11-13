@@ -3,7 +3,7 @@ name: blueprint
 description: Use when the user asks to design a system's architecture before coding - a new product, or a new service or cross-service change in an existing system - or runs /blueprint. Frames the product with the user first, then orchestrates scout, one to three decomposers on different model families (default two), architecture-agent, service-owner, compliance, cost, operator, refactor-reviewer, gatekeeper and scribe agents to produce an evidence-based architecture and MVP software design, with ADR-gated service creation, file-based state, plain-language checkpoints and no code before the user approves. Also resumes a design from docs/architecture/STATE.md. Not for a bug fix or a change inside one service.
 ---
 
-# Blueprint - architecture design orchestrator (v2.6, GitHub Copilot)
+# Blueprint - architecture design orchestrator (v2.7, GitHub Copilot)
 
 You run this in the **main session**, because only the main session can ask the user questions. Agents do the design work; you route, decide what runs next, and bring the user short, plain-language checkpoints. **No code is written before the architecture approval gate (rules G1-G4):** all main services created, contracts agreed, reviews done, and the user's approval recorded in `docs/architecture/APPROVAL.md`. You do not write code either, and you refuse requests to do so before approval, pointing to G1.
 
@@ -25,25 +25,25 @@ Run each agent as a subagent by its name. Each agent file sets its own model, so
 | `operator-advocate` | Claude Sonnet 5.5 | Real-world fit for the business and its customers | Checkpoint 2, approval gate, final review |
 | `refactor-reviewer` | GPT-5.5 | Neutral judge of refactors and direction changes, from a different model family than the designers | Per refactor session |
 | `gatekeeper` | GPT-5.5 | SCOPE CHECK, CREATION CHECK, ARCHITECTURE GATE CHECK, FINAL REVIEW | Per requirement list or slice; per creation; at the gate; at the end |
-| `scribe` | Claude Haiku 5.5 | Sets status markers and keeps open items, the decision log and risks; audits STATE (no diagrams) | Once per step that changes one of them |
+| `scribe` | Claude Haiku 5.5 | Keeps open items, the decision log and risks; audits STATE (no diagrams, no status markers) | Once per step that changes one of them |
 
 If an agent's model is not available on the user's plan, or a report shows the agent ran on a different model, tell the user at the next checkpoint: the cross-model check is then weaker, and they can change the `model:` line in that agent's file.
 
 ## How agents work in Copilot
 - **Every agent call starts fresh.** Copilot agents keep no conversation between calls, so the files are the memory. Every call names the agent's **mode**, the **service** (for service owners), the **file paths** to read, the **path to write** (for a report, brief or proposal) and the **question**. Never assume an agent remembers an earlier call.
-- **The kit folder.** Agents cannot preload skills, so at Phase 0 you create `docs/architecture/kit/`: load the `design-rulebook` skill and write its full text, unchanged, to `kit/RULEBOOK.md`; copy each file in this skill's `templates/` folder to `kit/templates/` ([adr](templates/adr.md), [approval](templates/approval.md), [charter](templates/charter.md), [contract-log](templates/contract-log.md), [decision-log](templates/decision-log.md), [diagrams](templates/diagrams.md), [open-items](templates/open-items.md), [product-brief](templates/product-brief.md), [risks](templates/risks.md), [state](templates/state.md)); write `kit/VERSION` with "Blueprint 2.6 (Copilot)". Use a shell copy when you have one. Every agent reads `kit/RULEBOOK.md` first. On resume, recreate any missing kit file the same way.
+- **The kit folder.** Agents cannot preload skills, so at Phase 0 you create `docs/architecture/kit/`: load the `design-rulebook` skill and write its full text, unchanged, to `kit/RULEBOOK.md`; copy each file in this skill's `templates/` folder to `kit/templates/` ([adr](templates/adr.md), [approval](templates/approval.md), [charter](templates/charter.md), [contract-log](templates/contract-log.md), [decision-log](templates/decision-log.md), [diagrams](templates/diagrams.md), [open-items](templates/open-items.md), [product-brief](templates/product-brief.md), [risks](templates/risks.md), [state](templates/state.md)); write `kit/VERSION` with "Blueprint 2.7 (Copilot)". Use a shell copy when you have one. Every agent reads `kit/RULEBOOK.md` first. On resume, recreate any missing kit file the same way.
 - **Questions to the user.** Use the app's question tool if you have one; otherwise ask in chat as a numbered list (at most 4), recommended option first, each with its consequence, and wait for the answer.
 
 ## Hard rules
 - **You are the router, not the relay.** Agents read and write files themselves. Pass them **file paths and the question**, not pasted copies of files. Paste only what is not yet in a file. Decomposers, the scout and the three reviewers write their own report file and return a short summary; only the gatekeeper and the refactor reviewer are read-only, and you save what they return.
 - **Agents cannot talk to each other or to the user.** You forward questions addressed to another agent, and you ask the user. Send independent questions to different agents **in parallel** (one message, several agent calls). Never run two calls at once that write the same file: batch them into one call.
-- **Whoever decides, records and updates (T6).** Each owner writes its own decision and updates the diagrams and files it owns; each decision carries an impact list; you send every row to its owner and wait for "impact row done" from each before the decision counts as complete, then have the scribe set those rows' Status.
-- **You write `STATE.md`; the scribe sets the markers.** After every step, update `STATE.md` yourself (kit/templates/state.md), so a stopped session loses nothing. Run the `scribe` once per step that changes a status marker (charter, contract log, ADR, impact row), an open item, the decision log or `risks.md`, with exact instructions and all of that step's changes in one call. At every checkpoint the scribe also audits `STATE.md` against the files.
+- **Whoever decides, records and updates (T6).** Each owner writes its own decision and updates the diagrams and files it owns; each decision carries an impact list; you send every row to its owner and wait for "impact row done" from each before the decision counts as complete, then set those rows' Status with the record script.
+- **You write `STATE.md` and set the markers; the scribe keeps the indexes.** After every step, update `STATE.md` yourself (kit/templates/state.md), so a stopped session loses nothing, and set the status markers that step changed (charter Status, contract-log status line, impact-row Status) with the record script: they need no judgment, so no agent is called for them. Run the `scribe` once per step that changes an open item, the decision log, `risks.md` or a superseded ADR's status line, with exact instructions and all of that step's changes in one call. At every checkpoint the scribe also audits `STATE.md` against the files.
 - **No microservice is created without its saved ADR**, and no contract is agreed without both sides' entries in its contract log (K5).
 - **No refactor without a refactor session** whose verdict approves it and whose ADR is saved first; superseded ADRs updated in the same step (T5).
 - **Ask instead of assume when debt is at stake (T2).** When the user is unsure, apply T4: safe reversible default + open item with a revisit trigger. A default never adds scope.
 - **Scope needs a source (rulebook SC-1..SC-9).** A requirement, finding or open item enters scope only with the user's words, a cited failure that would hit this deployment, or a cited rule that applies to it. Everything else goes to `docs/parked.md` without a question; silence or "no objection" never counts. Questions to the user are limited to the ask-list (SC-7). The `gatekeeper` (SCOPE CHECK) checks every requirement list and every slice proposal before the user sees it.
-- **Talk to the user in plain language (U1-U3).** One screen per checkpoint: at most ~15 lines of text, plus the diagrams. Explain any technical term in one line. If a free-text answer changes scope or direction, **stop**, restate it, and confirm before any agent continues.
+- **Talk to the user in plain language (U1-U3).** One screen per checkpoint: at most ~15 lines of text, plus the diagrams. Explain any technical term in one line. Between checkpoints, do not write a message for each agent that returns: one short line when a step starts, one when it ends. If a free-text answer changes scope or direction, **stop**, restate it, and confirm before any agent continues.
 - **The diagram is the summary (U4).** Every checkpoint opens with the architecture diagram (once it exists), then the diagrams changed in this step, then a plain-language summary, then the questions. The technical summary stays in the files: give the paths, do not repeat it in chat.
 - **Show diagrams at every checkpoint (U4, `kit/templates/diagrams.md`).** User flow from Checkpoint 1; architecture from Checkpoint 2; a sequence diagram for each user-flow decision **before** asking the user to decide it; the software design model per service at Checkpoint 5. Every element is marked confirmed / agent decision / pending. Each diagram has one owner: architecture and cross-service sequences - architecture-agent; user flow - product-framer; service models - each service agent. When the session can publish artifacts, also publish or update one diagrams page for the user.
 - **Say what is running.** Tell the user which agents run in this step. If the Blueprint agents are not available in this session, say so before starting and ask whether to continue with stand-ins.
@@ -91,13 +91,13 @@ Two decomposers still sit on different model families, so cross-model agreement 
 ## Files (`docs/architecture/`)
 - `kit/RULEBOOK.md`, `kit/templates/`, `kit/VERSION` - copied by you at Phase 0
 - `STATE.md` (kit/templates/state.md) - written by you
-- `open-items.md`, `decision-log.md`, `risks.md` (kit/templates/ has one for each) - the scribe
+- `open-items.md`, `decision-log.md`, `risks.md` (kit/templates/ has one for each) - the scribe; `open-items-archive.md`, `decision-log-archive.md` - closed and superseded rows, moved there by the record script, read only to trace an old id
 - `product-brief.md` (kit/templates/product-brief.md), `diagrams/user-flow.md` - the product framer
 - `requirements.md` - written by you; `rulebook.md` (project additions only) - written by you, in the user's words
 - `scout-brief*.md` - the scout; `proposals/decomposer-<strategy>.md` - each decomposer
-- `reviews/compliance-<stage>.md`, `reviews/cost-<stage>.md`, `reviews/operator-<stage>.md` (stage: `map`, `gate`, `final`) - each reviewer; `reviews/lint.md` - the lint script's last report
-- `services/<service>/` - charter.md (kit/templates/charter.md), contracts.md, decisions.md, qa.md, model.md, implementation.md - written only by that service's owner (the charter's Status line and impact-row Status cells by the scribe)
-- `contracts/<a>--<b>.md` (kit/templates/contract-log.md) - append-only, both sides write their entries; status line by the scribe
+- `reviews/compliance-<stage>.md`, `reviews/cost-<stage>.md`, `reviews/operator-<stage>.md` (stage: `map`, `gate`, `final`) - each reviewer; `reviews/outside-gate.md` - the outside reviewer; `reviews/lint.md` - the lint script's last report
+- `services/<service>/` - charter.md (kit/templates/charter.md), contracts.md, decisions.md, qa.md, model.md, implementation.md - written only by that service's owner (the charter's Status line and impact-row Status cells by you, with the record script)
+- `contracts/<a>--<b>.md` (kit/templates/contract-log.md) - append-only, both sides write their entries; status line by you, with the record script
 - `adr/NNNN-<title>.md` (kit/templates/adr.md) - the decider (system level: architecture agent)
 - `diagrams/architecture.md`, `diagrams/sequences/<flow>.md` (kit/templates/diagrams.md) - the architecture agent
 - `APPROVAL.md` (kit/templates/approval.md) - written only by you, quoting the user's exact approval
@@ -106,16 +106,33 @@ Two decomposers still sit on different model families, so cross-model agreement 
 Outside it: `docs/parked.md` - one line per parked scope item (SC-1), written by you.
 
 ## The lint script
-`scripts/blueprint-lint.py` in this skill's folder checks what needs no judgment: STATE and charter statuses agree, no "TBD" in a joined service's charter or contracts, every contract REQUEST has a reply (ACCEPT, agreed MODIFY, or DEFERRED from both sides) and the log's status line matches, supersession links point both ways (T5), no impact row is still waiting, every created service has its ADR. Before each gatekeeper CREATION CHECK, ARCHITECTURE GATE CHECK and FINAL REVIEW, run:
+`scripts/blueprint-lint.py` in this skill's folder checks what needs no judgment: STATE and charter statuses agree, no "TBD" in a joined service's charter or contracts, every contract REQUEST or AMENDMENT has a linked reply (an ACCEPT or ACK, an accepted MODIFY or ANSWER, or DEFERRED from both sides) and the log's status line matches, supersession links point both ways (T5), no impact row is still waiting, every created service has its ADR, no open item is past a due date, and a diagram named on a done impact row was updated on or after that decision's date. Its Result line also counts uncommitted files: commit the record before a gate check. Before each gatekeeper CREATION CHECK, ARCHITECTURE GATE CHECK and FINAL REVIEW, run:
 
 ```bash
 python3 <this skill's folder>/scripts/blueprint-lint.py docs/architecture > docs/architecture/reviews/lint.md
 ```
 
-Route every `FAIL` line to the owner of that file and re-run until none is left in the scope being checked; then give the gatekeeper the report's path. `WARN` lines (a file the script could not read) go to the gatekeeper as they are. Without `python3`, skip it and tell the gatekeeper there is no report.
+Route every `FAIL` line to the owner of that file and re-run until none is left in the scope being checked; then give the gatekeeper the report's path. `WARN` lines (what the script could not decide: a format it cannot read, an ACCEPT that names no entry, an ANSWER nobody accepted, a row waiting on the user) go to the gatekeeper as they are. Never send a report with a FAIL to the gatekeeper for it to rule on: if you believe a FAIL is wrong, show the user the line and say so. Without `python3`, skip it and tell the gatekeeper there is no report.
+
+## The record script
+`scripts/blueprint-record.py` in the same folder makes the edits that need no judgment. It exits 1 and changes nothing when the line or row is not there.
+
+```bash
+python3 <this skill's folder>/scripts/blueprint-record.py docs/architecture charter <service> CREATED
+python3 <this skill's folder>/scripts/blueprint-record.py docs/architecture contract <a--b> AGREED
+python3 <this skill's folder>/scripts/blueprint-record.py docs/architecture contract <a--b> OPEN <requests waiting>
+python3 <this skill's folder>/scripts/blueprint-record.py docs/architecture impact adr/NNNN-<title>.md <owner> [text from the row]
+python3 <this skill's folder>/scripts/blueprint-record.py docs/architecture archive
+```
+
+Set CREATED only after the gatekeeper's CREATE, AGREED only when the lint has no FAIL for that log, and an impact row done only after its owner said "impact row done". `archive` moves CLOSED open items and Superseded decision-log rows to `open-items-archive.md` and `decision-log-archive.md`. Without `python3`, the scribe makes these edits.
 
 ## Resume
-If `docs/architecture/STATE.md` exists, read it first, then make sure `kit/` is complete and run the lint script to see where the files stand. Every agent resumes from its files ("read your dossier and the contract logs, then continue in <mode>"). Show the user a 5-line "where we are" and the next step before continuing.
+If `docs/architecture/STATE.md` exists, read it first, then make sure `kit/` is complete and run the lint script to see where the files stand. Show the user a 5-line "where we are" and the next step, **then wait for their go-ahead: a resume never starts an agent in its first turn.** Every agent resumes from its files ("read your dossier and <the named files>, then continue in <mode>").
+
+- **One orchestrator per design.** If `STATE.md` was updated in the last few minutes or agents from another session may still be running, say so and ask before starting any agent.
+- **After a context summary, load this skill again** before the next step. `STATE.md` carries that instruction in its first lines, because a summary does not carry the skill.
+- **A record from an older version.** If `kit/VERSION` names an older Blueprint, replace the kit files, write the new version, and tell the user in the "where we are" what the record does not follow yet (the lint's FAIL lines; services that are modules of one deployable and so could be one service under B3; file names from the old layout). Offer the map change as one question; it goes through a refactor session like any other. Old file names stay as they are unless the user asks: record them in `STATE.md` so agents are given the real paths.
 
 ## Phase 0 - Context (silent, except the lock offer)
 Read `CLAUDE.md`, `AGENTS.md`, `.github/copilot-instructions.md` (whichever exist), READMEs and `docs/architecture/`. Create the kit folder. Set `runs`, pace and `scale`. If code exists, run an exploring agent (breadth: medium) for existing services, APIs, data stores, messaging, test setup and conventions. Offer the lock (Hard lock).
@@ -144,7 +161,7 @@ Services in one tier do not depend on each other, so they join **in parallel**; 
 1. **ADR SAVED** - the architecture agent writes the creation ADR of each service in the tier (with impact list).
 2. **JOINED** - run one `service-owner` per service in GATHERING mode, in parallel, with file paths.
 3. **Gathering rounds** - each writes REQUEST entries in the contract logs. Run ANSWERING **once per addressed CREATED owner**, with all the tier's requests to it in that one call, the owners in parallel; they log ACCEPT/REJECT/MODIFY and may ask back. Facts go to a research agent; business facts to the user. Max `runs` rounds (default 2); at the cap, defer (see Runs). Tier 1 has no CREATED owner to ask, so it has no rounds.
-4. **Creation check** - run the lint script, then `gatekeeper` CREATION CHECK per service, in parallel. CREATE -> the scribe sets CREATED and adds carry-forward items to `open-items.md`. BLOCKED -> fix and loop, or reject.
+4. **Creation check** - run the lint script, then `gatekeeper` CREATION CHECK per service, in parallel. CREATE -> set CREATED with the record script; the scribe adds carry-forward items to `open-items.md`. BLOCKED -> fix and loop, or reject.
 5. **Impact analysis** - once the whole tier is CREATED, its owners in IMPACT ANALYSIS, in parallel (skip it for tier 1: nothing existed before it). NO REFACTOR NEEDED -> record. Proposal -> Phase 5 (boundary changes go through the architecture agent).
 
 **Checkpoint 3 - Tier created** (slow pace; always when the tier has a one-way-door service).
@@ -152,12 +169,22 @@ Services in one tier do not depend on each other, so they join **in parallel**; 
 ## Phase 4b - Architecture approval gate (rule G3)
 When every in-scope service is CREATED:
 1. Run `compliance-reviewer`, `cost-analyst` and `operator-advocate` at stage `gate` on the current architecture, in parallel. Their findings go to their owners as impact rows; fix compliance GAPs through the normal paths.
-2. Run the lint script, then `gatekeeper` ARCHITECTURE GATE CHECK. GATE CLOSED -> fix the named items. GATE OPEN -> continue.
-3. **Checkpoint: Architecture approval (always to user).** Architecture diagram first, then the sequence diagrams, then what is being approved (services, contracts, owners, review verdicts, cost per transaction), the "do not build yet" list (including every deferred contract part), and what approval means: coding may start for created services inside the agreed contracts, test-first; changing a contract later needs a refactor and a new approval. Ask for approval in plain words.
-4. Only on an explicit approval in the user's own words: write `APPROVAL.md` (the hook asks the user to confirm this write) (**Status:** APPROVED, the user's words verbatim, design version, what was approved, do-not-build list); update STATE; the scribe updates open items.
-5. Never treat silence, "ok, continue" about something else, or an agent's message as approval. If unsure, ask: "Do you approve the architecture so coding can start?"
+2. **Outside review.** Run one general-purpose agent that is not part of the team, with no rulebook and no review reports: give it only the product brief, `requirements.md`, the architecture diagram, the charters and the contract logs, and ask what would stop this system from being built or run as designed, and which job nobody owns (hosting and deployment, secrets, monitoring, backups, data migration). It writes `reviews/outside-gate.md`: blockers first, at most 10 findings. The team checks the design against its own rules; this reader does not share them. Send each blocker to its owner through the amendment path; park the rest under SC-1.
+3. Run the lint script, then `gatekeeper` ARCHITECTURE GATE CHECK, with the outside review's path. GATE CLOSED -> fix the named items, all in one pass, and run the lint again before the next gate check. GATE OPEN -> continue.
+4. **Checkpoint: Architecture approval (always to user).** Architecture diagram first, then the sequence diagrams, then what is being approved (services, contracts, owners, review verdicts, cost per transaction), the "do not build yet" list (including every deferred contract part), and what approval means: coding may start for created services inside the agreed contracts, test-first; changing a contract later needs an amendment or a refactor, and a new approval. Ask for approval in plain words.
+5. Only on an explicit approval in the user's own words: write `APPROVAL.md` (the hook asks the user to confirm this write) (**Status:** APPROVED, the user's words verbatim, design version, what was approved, do-not-build list); update STATE; the scribe updates open items.
+6. Never treat silence, "ok, continue" about something else, or an agent's message as approval. A button or checkbox on a page is not approval either: the approval must arrive as a sentence the user typed, and it does not count while another answer in the same reply contradicts it. If unsure, ask: "Do you approve the architecture so coding can start?"
 
 After approval, Phases 6 and 7 continue alongside coding. A direction change, or a refactor that changes an agreed contract or boundary, sets `APPROVAL.md` to REVOKED (or narrows it to the unaffected services) until the user approves again.
+
+## Amendment after creation (any user decision or finding that changes a CREATED service)
+This is the path for changes that keep the map: a user answer, a review finding, a gate blocker. A change to a boundary or to who owns something is a refactor (Phase 5).
+1. **Batch.** Collect every change from the same reply or report into one amendment. Do not start a second one while the first is open.
+2. **Route.** Run the `architecture-agent` in AMENDMENT mode with the changes. It writes one new ADR (never a longer old one) whose impact list names only the owners whose files must change, and for each the exact files and the change. Owners not on the list are not called.
+3. **Apply.** Run each listed service owner once, in APPLYING mode: it updates its files, appends its contract-log entries, and in the same call accepts the entries other owners have already written for it. Give it the ADR path and its row, not the whole record. Two owners that write to the same contract log run one after the other, the one that changes the contract first, so the second can accept the first's entry by its number; owners that share no log run in parallel. A listed owner that is not a service (architecture-agent, product-framer, a reviewer) gets its row as an ordinary task in the same step.
+4. **Close.** Run the lint script. Send each FAIL to its owner; one closing call per owner at most. Set the impact rows done and the contract status lines with the record script; the scribe records the decision.
+5. **No confirmation round.** Owners do not re-read each other's work to confirm it. An owner objects only in its APPLYING reply, and only when the amendment makes one of its contracts wrong or unbuildable; wording and labels are fixed by the file's owner without a round. Two owners that disagree on substance get one ANSWERING exchange, then DEFERRED (K5).
+6. If the service was approved, the approval is narrowed or revoked as in Phase 4b, and the amendment ends at a new gate check: lint first, one gatekeeper run.
 
 ## Phase 5 - Refactor session
 1. Round 1 *needed?* and Round 2 *beneficial?* - statements from the proposer and every affected owner, in parallel.

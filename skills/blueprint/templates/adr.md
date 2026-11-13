@@ -29,8 +29,8 @@
 <what becomes easier, what becomes harder, follow-up work>
 
 ## Impact list (T6)
-_One row per other owner affected. The owner updates its own files and reports "impact row done"; the scribe sets Status._
+_One row per other owner whose files must change. The owner updates its own files and reports "impact row done"; the orchestrator sets Status. Status is one of: `waiting`, `done`, `not needed`, `deferred: <when> (OI-nnn)`._
 
 | Affected owner | What changes for them | Diagram or file they must update | Status |
 |---|---|---|---|
-| <service or agent> | <change> | <path> | waiting / done |
+| <service or agent> | <change> | <path> | waiting |

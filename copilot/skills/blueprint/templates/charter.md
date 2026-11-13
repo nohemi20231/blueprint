@@ -16,4 +16,4 @@
 | Quality needs | <latency, availability, consistency, security> |
 | Ports / interfaces | <filled in the implementation phase> |
 
-Other files in this folder: `contracts.md`, `decisions.md`, `qa.md`, `model.md`, `implementation.md`. The Status line is set by the scribe; everything else by this service's owner.
+Other files in this folder: `contracts.md`, `decisions.md`, `qa.md`, `model.md`, `implementation.md`. The Status line is set by the orchestrator; everything else by this service's owner.
